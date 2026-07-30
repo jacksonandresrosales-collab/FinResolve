@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CANALES, CATEGORIAS } from '@/lib/mockData';
+const CANALES = ['Banca en Línea', 'App Móvil', 'Call Center', 'Sucursal', 'Correo Electrónico'];
+const CATEGORIAS = ['Transacción no reconocida', 'Cobro duplicado', 'Error en transferencia', 'Producto/Servicio deficiente', 'Demora en proceso'];
+
 import {
   Send,
   ArrowLeft,
