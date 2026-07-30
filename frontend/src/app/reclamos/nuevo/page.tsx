@@ -1,15 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-const CANALES = ['Banca en Línea', 'App Móvil', 'Call Center', 'Sucursal', 'Correo Electrónico'];
-const CATEGORIAS = ['Transacción no reconocida', 'Cobro duplicado', 'Error en transferencia', 'Producto/Servicio deficiente', 'Demora en proceso'];
-
+import { apiGet, apiPost } from '@/lib/api';
+import { CatalogoResponse, ClienteResponse } from '@/types';
 import {
   Send,
   ArrowLeft,
   User,
-  CreditCard,
   Layers,
   Radio,
   FileText,
@@ -19,31 +17,50 @@ import {
 } from 'lucide-react';
 
 interface FormData {
-  identificacion: string;
-  nombreCliente: string;
-  canal: string;
-  categoria: string;
+  clientePersonaId: string;
+  canalReclamoId: string;
+  categoriaReclamoId: string;
   descripcion: string;
-  monto: string;
+  montoReclamo: string;
   indisponibilidadDigital: boolean;
 }
 
 const initialForm: FormData = {
-  identificacion: '',
-  nombreCliente: '',
-  canal: '',
-  categoria: '',
+  clientePersonaId: '',
+  canalReclamoId: '',
+  categoriaReclamoId: '',
   descripcion: '',
-  monto: '',
+  montoReclamo: '',
   indisponibilidadDigital: false,
 };
 
 export default function NuevoReclamoPage() {
   const router = useRouter();
+  
+  const [clientes, setClientes] = useState<ClienteResponse[]>([]);
+  const [canales, setCanales] = useState<CatalogoResponse[]>([]);
+  const [categorias, setCategorias] = useState<CatalogoResponse[]>([]);
+  
   const [form, setForm] = useState<FormData>(initialForm);
   const [errores, setErrores] = useState<Partial<Record<keyof FormData, string>>>({});
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [codigoGenerado, setCodigoGenerado] = useState('');
+
+  // Cargar catálogos al montar
+  useEffect(() => {
+    Promise.all([
+      apiGet<ClienteResponse[]>('/catalogos/clientes'),
+      apiGet<CatalogoResponse[]>('/catalogos/canales'),
+      apiGet<CatalogoResponse[]>('/catalogos/categorias'),
+    ])
+      .then(([clientesData, canalesData, categoriasData]) => {
+        setClientes(clientesData);
+        setCanales(canalesData);
+        setCategorias(categoriasData);
+      })
+      .catch((err) => console.error('Error cargando catálogos:', err));
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -54,7 +71,6 @@ export default function NuevoReclamoPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-    // Limpiar error del campo al escribir
     if (errores[name as keyof FormData]) {
       setErrores((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -63,32 +79,18 @@ export default function NuevoReclamoPage() {
   const validar = (): boolean => {
     const nuevosErrores: Partial<Record<keyof FormData, string>> = {};
 
-    if (!form.identificacion.trim()) {
-      nuevosErrores.identificacion = 'La cédula o RUC es obligatoria';
-    } else if (form.identificacion.trim().length < 10) {
-      nuevosErrores.identificacion = 'Debe tener al menos 10 dígitos';
-    }
-
-    if (!form.nombreCliente.trim()) {
-      nuevosErrores.nombreCliente = 'El nombre del cliente es obligatorio';
-    }
-
-    if (!form.canal) {
-      nuevosErrores.canal = 'Selecciona un canal de ingreso';
-    }
-
-    if (!form.categoria) {
-      nuevosErrores.categoria = 'Selecciona una categoría';
-    }
-
+    if (!form.clientePersonaId) nuevosErrores.clientePersonaId = 'Selecciona un cliente';
+    if (!form.canalReclamoId) nuevosErrores.canalReclamoId = 'Selecciona un canal de ingreso';
+    if (!form.categoriaReclamoId) nuevosErrores.categoriaReclamoId = 'Selecciona una categoría';
+    
     if (!form.descripcion.trim()) {
-      nuevosErrores.descripcion = 'La descripción del reclamo es obligatoria';
+      nuevosErrores.descripcion = 'La descripción es obligatoria';
     } else if (form.descripcion.trim().length < 20) {
       nuevosErrores.descripcion = 'Describe el reclamo con al menos 20 caracteres';
     }
 
-    if (form.monto && isNaN(Number(form.monto))) {
-      nuevosErrores.monto = 'El monto debe ser un número válido';
+    if (form.montoReclamo && isNaN(Number(form.montoReclamo))) {
+      nuevosErrores.montoReclamo = 'El monto debe ser numérico';
     }
 
     setErrores(nuevosErrores);
@@ -97,24 +99,33 @@ export default function NuevoReclamoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validar()) return;
 
     setEnviando(true);
+    try {
+      const payload = {
+        clientePersonaId: Number(form.clientePersonaId),
+        canalReclamoId: Number(form.canalReclamoId),
+        categoriaReclamoId: Number(form.categoriaReclamoId),
+        descripcion: form.descripcion,
+        montoReclamo: form.montoReclamo ? parseFloat(form.montoReclamo) : null,
+        indisponibilidadDigital: form.indisponibilidadDigital,
+        empresaId: 1, // Hardcodeado por la hackathon
+        usuIdCreacion: 1, // Hardcodeado por la hackathon
+      };
 
-    // Simular envío (aquí conectaremos con la API real después)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    console.log('Reclamo enviado (mock):', {
-      ...form,
-      monto: form.monto ? parseFloat(form.monto) : null,
-    });
-
-    setEnviando(false);
-    setEnviado(true);
+      const res = await apiPost<any>('/reclamos', payload);
+      
+      setCodigoGenerado(res.codigo || `REC-API-${Math.floor(Math.random() * 1000)}`);
+      setEnviado(true);
+    } catch (error) {
+      console.error('Error al crear reclamo:', error);
+      alert('Hubo un error al crear el reclamo. Revisa la consola.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
-  // Pantalla de éxito
   if (enviado) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
@@ -122,18 +133,10 @@ export default function NuevoReclamoPage() {
           <div className="w-16 h-16 bg-emerald-500/15 rounded-full flex items-center justify-center mx-auto mb-6 animate-[scale-in_0.3s_ease-out]">
             <CheckCircle2 className="w-8 h-8 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-heading font-bold text-white mb-2">
-            ¡Reclamo registrado!
-          </h2>
-          <p className="text-slate-400 mb-2">
-            El sistema ha calculado automáticamente la prioridad y fecha límite SLA.
-          </p>
+          <h2 className="text-2xl font-heading font-bold text-white mb-2">¡Reclamo registrado!</h2>
+          <p className="text-slate-400 mb-2">El sistema de motor de reglas ha calculado automáticamente la prioridad y fecha límite SLA.</p>
           <p className="text-sm text-slate-500 mb-8">
-            Código asignado:{' '}
-            <span className="font-mono font-semibold text-brand-400">
-              REC-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-
-              {String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}
-            </span>
+            Código asignado: <span className="font-mono font-semibold text-brand-400">{codigoGenerado}</span>
           </p>
           <div className="flex items-center justify-center gap-3">
             <button
@@ -159,209 +162,125 @@ export default function NuevoReclamoPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
       <div>
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors mb-4 group"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          Volver
+        <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors mb-4 group">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Volver
         </button>
         <h1 className="text-2xl font-heading font-bold text-white">Nuevo Reclamo</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Complete el formulario para registrar un nuevo reclamo. El sistema calculará la prioridad
-          automáticamente.
-        </p>
+        <p className="text-sm text-slate-400 mt-1">Complete el formulario para registrar un caso en la base de datos real.</p>
       </div>
 
-      {/* Formulario */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Sección: Datos del Cliente */}
+        {/* Datos del Cliente */}
         <div className="bg-surface-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-5 flex items-center gap-2">
-            <User className="w-4 h-4 text-brand-400" />
-            Datos del Cliente
+            <User className="w-4 h-4 text-brand-400" /> Selección de Cliente
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Identificación */}
-            <div>
-              <label htmlFor="identificacion" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Cédula / RUC <span className="text-rose-400">*</span>
-              </label>
-              <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  id="identificacion"
-                  name="identificacion"
-                  type="text"
-                  value={form.identificacion}
-                  onChange={handleChange}
-                  maxLength={13}
-                  placeholder="0912345678"
-                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all ${
-                    errores.identificacion ? 'border-rose-500/50' : 'border-white/10'
-                  }`}
-                />
-              </div>
-              {errores.identificacion && (
-                <p className="mt-1.5 text-xs text-rose-400">{errores.identificacion}</p>
-              )}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Cliente <span className="text-rose-400">*</span></label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <select
+                name="clientePersonaId"
+                value={form.clientePersonaId}
+                onChange={handleChange}
+                className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all appearance-none cursor-pointer ${
+                  errores.clientePersonaId ? 'border-rose-500/50' : 'border-white/10'
+                } ${!form.clientePersonaId ? 'text-slate-600' : ''}`}
+              >
+                <option value="">Seleccionar cliente de la base de datos...</option>
+                {clientes.map(c => (
+                  <option key={c.personaId} value={c.personaId}>
+                    {c.nombreCompleto} ({c.identificacion})
+                  </option>
+                ))}
+              </select>
             </div>
-
-            {/* Nombre */}
-            <div>
-              <label htmlFor="nombreCliente" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Nombre Completo <span className="text-rose-400">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  id="nombreCliente"
-                  name="nombreCliente"
-                  type="text"
-                  value={form.nombreCliente}
-                  onChange={handleChange}
-                  placeholder="Nombre del cliente"
-                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all ${
-                    errores.nombreCliente ? 'border-rose-500/50' : 'border-white/10'
-                  }`}
-                />
-              </div>
-              {errores.nombreCliente && (
-                <p className="mt-1.5 text-xs text-rose-400">{errores.nombreCliente}</p>
-              )}
-            </div>
+            {errores.clientePersonaId && <p className="mt-1.5 text-xs text-rose-400">{errores.clientePersonaId}</p>}
           </div>
         </div>
 
-        {/* Sección: Clasificación */}
+        {/* Clasificación */}
         <div className="bg-surface-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-5 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-violet-400" />
-            Clasificación del Reclamo
+            <Layers className="w-4 h-4 text-violet-400" /> Clasificación del Reclamo
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Canal */}
             <div>
-              <label htmlFor="canal" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Canal de Ingreso <span className="text-rose-400">*</span>
-              </label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Canal <span className="text-rose-400">*</span></label>
               <div className="relative">
                 <Radio className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <select
-                  id="canal"
-                  name="canal"
-                  value={form.canal}
+                  name="canalReclamoId"
+                  value={form.canalReclamoId}
                   onChange={handleChange}
-                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all appearance-none cursor-pointer ${
-                    errores.canal ? 'border-rose-500/50' : 'border-white/10'
-                  } ${!form.canal ? 'text-slate-600' : ''}`}
+                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white focus:outline-none transition-all appearance-none cursor-pointer ${
+                    errores.canalReclamoId ? 'border-rose-500/50' : 'border-white/10'
+                  } ${!form.canalReclamoId ? 'text-slate-600' : ''}`}
                 >
                   <option value="">Seleccionar canal...</option>
-                  {CANALES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+                  {canales.map(c => <option key={c.id} value={c.id}>{c.descripcion}</option>)}
                 </select>
               </div>
-              {errores.canal && <p className="mt-1.5 text-xs text-rose-400">{errores.canal}</p>}
+              {errores.canalReclamoId && <p className="mt-1.5 text-xs text-rose-400">{errores.canalReclamoId}</p>}
             </div>
-
-            {/* Categoría */}
             <div>
-              <label htmlFor="categoria" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Categoría <span className="text-rose-400">*</span>
-              </label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Categoría <span className="text-rose-400">*</span></label>
               <div className="relative">
                 <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <select
-                  id="categoria"
-                  name="categoria"
-                  value={form.categoria}
+                  name="categoriaReclamoId"
+                  value={form.categoriaReclamoId}
                   onChange={handleChange}
-                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all appearance-none cursor-pointer ${
-                    errores.categoria ? 'border-rose-500/50' : 'border-white/10'
-                  } ${!form.categoria ? 'text-slate-600' : ''}`}
+                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white focus:outline-none transition-all appearance-none cursor-pointer ${
+                    errores.categoriaReclamoId ? 'border-rose-500/50' : 'border-white/10'
+                  } ${!form.categoriaReclamoId ? 'text-slate-600' : ''}`}
                 >
                   <option value="">Seleccionar categoría...</option>
-                  {CATEGORIAS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+                  {categorias.map(c => <option key={c.id} value={c.id}>{c.descripcion}</option>)}
                 </select>
               </div>
-              {errores.categoria && (
-                <p className="mt-1.5 text-xs text-rose-400">{errores.categoria}</p>
-              )}
+              {errores.categoriaReclamoId && <p className="mt-1.5 text-xs text-rose-400">{errores.categoriaReclamoId}</p>}
             </div>
           </div>
         </div>
 
-        {/* Sección: Detalle */}
+        {/* Detalle */}
         <div className="bg-surface-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-5 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-amber-400" />
-            Detalle del Reclamo
+            <FileText className="w-4 h-4 text-amber-400" /> Detalle
           </h2>
-
-          {/* Descripción */}
           <div className="mb-4">
-            <label htmlFor="descripcion" className="block text-sm font-medium text-slate-300 mb-1.5">
-              Descripción <span className="text-rose-400">*</span>
-            </label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Descripción <span className="text-rose-400">*</span></label>
             <textarea
-              id="descripcion"
               name="descripcion"
               value={form.descripcion}
               onChange={handleChange}
               rows={4}
-              placeholder="Describe detalladamente el motivo del reclamo..."
-              className={`w-full px-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all resize-none ${
+              placeholder="Describa el motivo del reclamo..."
+              className={`w-full px-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all resize-none ${
                 errores.descripcion ? 'border-rose-500/50' : 'border-white/10'
               }`}
             />
-            <div className="flex items-center justify-between mt-1.5">
-              {errores.descripcion ? (
-                <p className="text-xs text-rose-400">{errores.descripcion}</p>
-              ) : (
-                <span />
-              )}
-              <span className="text-xs text-slate-600">
-                {form.descripcion.length} caracteres
-              </span>
-            </div>
+            {errores.descripcion && <p className="mt-1.5 text-xs text-rose-400">{errores.descripcion}</p>}
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Monto */}
             <div>
-              <label htmlFor="monto" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Monto Reclamado (USD)
-              </label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Monto (Opcional)</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input
-                  id="monto"
-                  name="monto"
-                  type="text"
-                  inputMode="decimal"
-                  value={form.monto}
+                  name="montoReclamo"
+                  value={form.montoReclamo}
                   onChange={handleChange}
                   placeholder="0.00"
-                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all ${
-                    errores.monto ? 'border-rose-500/50' : 'border-white/10'
+                  className={`w-full pl-9 pr-3 py-2.5 bg-surface-800 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none transition-all ${
+                    errores.montoReclamo ? 'border-rose-500/50' : 'border-white/10'
                   }`}
                 />
               </div>
-              {errores.monto && (
-                <p className="mt-1.5 text-xs text-rose-400">{errores.monto}</p>
-              )}
+              {errores.montoReclamo && <p className="mt-1.5 text-xs text-rose-400">{errores.montoReclamo}</p>}
             </div>
-
-            {/* Indisponibilidad */}
             <div className="flex items-end">
               <label className="flex items-center gap-3 px-3 py-2.5 bg-surface-800 border border-white/10 rounded-xl cursor-pointer hover:border-white/20 transition-all w-full">
                 <div className="relative">
@@ -384,46 +303,26 @@ export default function NuevoReclamoPage() {
           </div>
         </div>
 
-        {/* Nota informativa */}
         <div className="bg-brand-500/5 border border-brand-500/10 rounded-2xl p-4 flex items-start gap-3">
           <div className="p-1.5 bg-brand-500/10 rounded-lg shrink-0 mt-0.5">
             <Layers className="w-4 h-4 text-brand-400" />
           </div>
           <div>
-            <p className="text-sm text-slate-300 font-medium">Priorización automática</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Al enviar este formulario, el sistema calculará automáticamente el nivel de prioridad
-              (Crítica, Alta, Media, Baja) y asignará una fecha límite SLA basada en la categoría,
-              monto, canal e indisponibilidad digital.
-            </p>
+            <p className="text-sm text-slate-300 font-medium">Motor de Reglas Activado</p>
+            <p className="text-xs text-slate-500 mt-0.5">Al enviar, el backend calculará automáticamente la prioridad del reclamo basándose en la matriz de decisión de la Hackathon.</p>
           </div>
         </div>
 
-        {/* Botones */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-          >
+          <button type="button" onClick={() => router.back()} className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors">
             Cancelar
           </button>
           <button
             type="submit"
             disabled={enviando}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all hover:shadow-lg hover:shadow-brand-500/25 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-medium rounded-xl transition-all"
           >
-            {enviando ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Registrar Reclamo
-              </>
-            )}
+            {enviando ? 'Enviando...' : <><Send className="w-4 h-4" /> Registrar en Base de Datos</>}
           </button>
         </div>
       </form>
