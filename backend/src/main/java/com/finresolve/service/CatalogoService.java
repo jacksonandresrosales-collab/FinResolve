@@ -86,11 +86,11 @@ public class CatalogoService {
     }
 
     public List<CatalogoResponse> listarAnalistas() {
-        TypedQuery<Usuario> query = entityManager.createQuery(
-                "SELECT u FROM Usuario u JOIN UsuarioRol ur ON u = ur.usuario WHERE ur.rol.rolId = :rolId",
-                Usuario.class);
-        query.setParameter("rolId", 3L);
-        return query.getResultStream()
+        List<Usuario> usuarios = entityManager.createQuery(
+                "SELECT ur.usuario FROM UsuarioRol ur WHERE ur.rol.rolId = :rolId", Usuario.class)
+                .setParameter("rolId", 3L)
+                .getResultList();
+        return usuarios.stream()
                 .map(u -> {
                     Persona p = u.getPersona();
                     String nombre = p.getNombre1() + " " + p.getApellido1();
@@ -100,11 +100,12 @@ public class CatalogoService {
     }
 
     public List<ClienteResponse> listarClientes() {
-        TypedQuery<Persona> query = entityManager.createQuery(
-                "SELECT p FROM Persona p JOIN PersonaTipoPersona ptp ON p = ptp.persona WHERE ptp.tipoPersona.tipoPersonaId = :tipoPersonaId",
-                Persona.class);
-        query.setParameter("tipoPersonaId", 1L);
-        return query.getResultStream()
+        List<Persona> personas = entityManager.createQuery(
+                "SELECT ptp.persona FROM PersonaTipoPersona ptp WHERE ptp.tipoPersona.tipoPersonaId = :tipoPersonaId",
+                Persona.class)
+                .setParameter("tipoPersonaId", 1L)
+                .getResultList();
+        return personas.stream()
                 .map(p -> {
                     String nombreCompleto = p.getNombre1() + " " + p.getApellido1();
                     if (p.getNombre2() != null && !p.getNombre2().isEmpty()) {
