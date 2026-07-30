@@ -5,31 +5,71 @@ export interface HealthResponse {
 }
 
 export interface ReclamoResponse {
-  id: number;
+  reclamoId: number;
   codigo: string;
-  identificacion: string;
-  nombreCliente: string;
-  canal: string;
-  categoria: string;
+  clienteNombre: string;
+  canalDescripcion: string;
+  categoriaDescripcion: string;
   descripcion: string;
-  monto: number | null;
+  montoReclamo: number | null;
   indisponibilidadDigital: boolean;
-  estado: string;
   puntaje: number;
-  prioridad: string;
-  responsable: string | null;
-  fechaCreacion: string;
+  prioridadDescripcion: string;
+  slaDescripcion: string;
+  estadoReclamoDescripcion: string;
+  analistaNombre: string | null;
+  fechaReclamo: string;
   fechaLimite: string;
-  fechaActualizacion: string;
-  alertaSla: string;
+  fechaCreacion: string;
+}
+
+export interface ReclamoDetalleResponse extends ReclamoResponse {
+  clienteIdentificacion: string;
+  clienteDireccion: string;
+  clienteTelefono: string;
+  clienteCorreo: string;
+  historial: ReclamoHistorialResponse[];
+}
+
+export interface ReclamoHistorialResponse {
+  reclamoHistorialId: number;
+  usuarioActorNombre: string;
+  tipoEvento: string;
+  estadoAnteriorDescripcion: string | null;
+  estadoNuevoDescripcion: string | null;
+  analistaAnteriorNombre: string | null;
+  analistaNuevoNombre: string | null;
+  observacion: string;
+  fechaEvento: string;
+}
+
+export interface CatalogoResponse {
+  id: number;
+  descripcion: string;
+}
+
+export interface ClienteResponse {
+  personaId: number;
+  nombreCompleto: string;
+  identificacion: string;
+  telefono: string | null;
+  correoElectronico: string | null;
 }
 
 export interface TableroResponse {
   totalReclamos: number;
-  abiertos: number;
+  pendientes: number;
+  enAnalisis: number;
   resueltos: number;
+  rechazados: number;
+  criticos: number;
+  altos: number;
+  medios: number;
+  bajos: number;
   vencidos: number;
-  proximosAVencer: number;
-  distribucionPrioridad: Record<string, number>;
-  distribucionCategoria: Record<string, number>;
+  ultimosReclamos: ReclamoResponse[];
 }
+
+export type EstadoKey = 'Nuevo' | 'En analisis' | 'Resuelto' | 'Rechazado';
+export type PrioridadKey = 'Critica' | 'Alta' | 'Media' | 'Baja';
+export type AlertaSlaKey = 'VENCIDO' | 'EN_RIESGO' | 'NORMAL';
