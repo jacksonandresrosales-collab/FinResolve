@@ -1,1 +1,64 @@
 @import "tailwindcss";
+
+@theme {
+  /* Premium Fintech Color Palette */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6; /* Primary brand color */
+  --color-brand-600: #2563eb;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
+
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-200: #e2e8f0;
+  --color-surface-800: #1e293b;
+  --color-surface-900: #0f172a;
+  --color-surface-950: #020617;
+
+  /* Priority Colors */
+  --color-priority-baja: #10b981;    /* Emerald 500 */
+  --color-priority-media: #f59e0b;   /* Amber 500 */
+  --color-priority-alta: #ef4444;    /* Red 500 */
+  --color-priority-critica: #9f1239; /* Rose 700 */
+
+  /* Global variables */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Space Grotesk', system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: var(--color-surface-50);
+    --foreground: var(--color-surface-950);
+    --sidebar-bg: #ffffff;
+    --border-color: var(--color-surface-200);
+  }
+
+  .dark {
+    --background: var(--color-surface-950);
+    --foreground: var(--color-surface-50);
+    --sidebar-bg: var(--color-surface-900);
+    --border-color: var(--color-surface-800);
+  }
+
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] font-sans antialiased transition-colors duration-200;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer components {
+  /* UI/UX Pro Max Guideline: Glassmorphism base for cards */
+  .glass-card {
+    @apply bg-white/70 dark:bg-[var(--surface-900)]/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-sm rounded-2xl;
+  }
+  
+  .glass-panel {
+    @apply bg-white/50 dark:bg-[var(--surface-900)]/50 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-lg;
+  }
+}
