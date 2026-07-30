@@ -6,6 +6,22 @@ MVP web que permite registrar, priorizar automáticamente, asignar, dar seguimie
 
 ---
 
+## Inicio Rápido
+
+```bash
+# 1. Backend (puerto 8080)
+cd backend && mvn spring-boot:run
+
+# 2. Frontend (puerto 3000) — en otra terminal
+cd frontend && npx next dev -p 3000
+```
+
+> `http://localhost:3000` — App
+> `http://localhost:8080/api/public/health` — Health check
+> `http://localhost:8080/api/swagger-ui.html` — Swagger UI
+
+---
+
 ## Arquitectura y Tecnologías
 
 ```
