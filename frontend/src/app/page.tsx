@@ -1,74 +1,98 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { apiGet } from "@/lib/api";
-import type { HealthResponse } from "@/types";
+import Link from 'next/link';
+import { LayoutDashboard, FileText, PlusCircle, ArrowRight, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
 
-type ConnectionStatus = "checking" | "connected" | "error";
-
-export default function Home() {
-  const [status, setStatus] = useState<ConnectionStatus>("checking");
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    apiGet<HealthResponse>("/public/health")
-      .then((data) => {
-        setHealth(data);
-        setStatus("connected");
-      })
-      .catch((err) => {
-        setErrorMsg(err.message);
-        setStatus("error");
-      });
-  }, []);
-
+export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="max-w-md w-full space-y-6 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">FinResolve</h1>
-        <p className="text-gray-500">
-          Plataforma para la gestión y priorización de reclamos financieros
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
+      {/* Hero */}
+      <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-500/10 border border-brand-500/20 rounded-full mb-6">
+          <ShieldCheck className="w-4 h-4 text-brand-400" />
+          <span className="text-xs font-semibold text-brand-400">Sistema de Gestión de Reclamos</span>
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-heading font-bold text-white mb-4 tracking-tight">
+          Bienvenido a{' '}
+          <span className="bg-gradient-to-r from-brand-400 to-blue-400 bg-clip-text text-transparent">
+            FinResolve
+          </span>
+        </h1>
+        <p className="text-lg text-slate-400 leading-relaxed">
+          Plataforma inteligente para la gestión y priorización automática de reclamos financieros
+          con control de SLA en tiempo real.
         </p>
+      </div>
 
-        <div className="rounded-xl border p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Estado de Conexión</h2>
-
-          {status === "checking" && (
-            <div className="flex items-center justify-center gap-2 text-yellow-600">
-              <span className="inline-block h-3 w-3 rounded-full bg-yellow-400 animate-pulse" />
-              Verificando conexión con el backend...
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
+        <Link
+          href="/tablero"
+          className="group relative bg-surface-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:border-brand-500/30 transition-all hover:shadow-lg hover:shadow-brand-500/5"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2.5 bg-brand-500/10 rounded-xl">
+              <LayoutDashboard className="w-5 h-5 text-brand-400" />
             </div>
-          )}
+            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
+          </div>
+          <h3 className="font-heading font-semibold text-white mb-1">Tablero</h3>
+          <p className="text-sm text-slate-500">KPIs y métricas en tiempo real</p>
+        </Link>
 
-          {status === "connected" && health && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 text-green-600">
-                <span className="inline-block h-3 w-3 rounded-full bg-green-500" />
-                Conectado
-              </div>
-              <div className="text-sm text-left space-y-1 bg-gray-50 rounded-lg p-3">
-                <p><span className="font-medium">Backend:</span> {health.application}</p>
-                <p><span className="font-medium">Status:</span> {health.status}</p>
-                <p><span className="font-medium">Timestamp:</span> {health.timestamp}</p>
-              </div>
+        <Link
+          href="/reclamos"
+          className="group relative bg-surface-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:border-violet-500/30 transition-all hover:shadow-lg hover:shadow-violet-500/5"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2.5 bg-violet-500/10 rounded-xl">
+              <FileText className="w-5 h-5 text-violet-400" />
             </div>
-          )}
+            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+          </div>
+          <h3 className="font-heading font-semibold text-white mb-1">Ver Reclamos</h3>
+          <p className="text-sm text-slate-500">Lista completa con filtros</p>
+        </Link>
 
-          {status === "error" && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 text-red-600">
-                <span className="inline-block h-3 w-3 rounded-full bg-red-500" />
-                Error de conexión
-              </div>
-              <p className="text-sm text-red-500 bg-red-50 rounded-lg p-3">{errorMsg}</p>
-              <p className="text-xs text-gray-400">
-                Asegúrate de que el backend esté corriendo en puerto 8080
-              </p>
+        <Link
+          href="/reclamos/nuevo"
+          className="group relative bg-surface-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:border-emerald-500/30 transition-all hover:shadow-lg hover:shadow-emerald-500/5"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl">
+              <PlusCircle className="w-5 h-5 text-emerald-400" />
             </div>
-          )}
+            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+          </div>
+          <h3 className="font-heading font-semibold text-white mb-1">Nuevo Reclamo</h3>
+          <p className="text-sm text-slate-500">Registrar un nuevo caso</p>
+        </Link>
+      </div>
+
+      {/* Stats Preview */}
+      <div className="mt-12 grid grid-cols-3 gap-6 max-w-lg">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
+            <span className="text-2xl font-heading font-bold text-white">2</span>
+          </div>
+          <p className="text-xs text-slate-500">SLA Vencidos</p>
+        </div>
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <Clock className="w-4 h-4 text-amber-400" />
+            <span className="text-2xl font-heading font-bold text-white">3</span>
+          </div>
+          <p className="text-xs text-slate-500">En Riesgo</p>
+        </div>
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <FileText className="w-4 h-4 text-brand-400" />
+            <span className="text-2xl font-heading font-bold text-white">12</span>
+          </div>
+          <p className="text-xs text-slate-500">Total Reclamos</p>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
