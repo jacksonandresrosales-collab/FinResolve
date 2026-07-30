@@ -147,11 +147,15 @@ export default function ReclamosPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {reclamosFiltrados.map((reclamo) => (
-                <tr key={reclamo.id} className="group hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <tr 
+                  key={reclamo.id} 
+                  onClick={() => window.location.href = `/reclamos/${reclamo.id}`}
+                  className="group hover:bg-white/[0.02] transition-all cursor-pointer relative"
+                >
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-brand-400 shrink-0" />
-                      <span className="text-sm font-mono font-medium text-white">{reclamo.codigo}</span>
+                      <span className="text-sm font-mono font-medium text-white group-hover:text-brand-400 transition-colors">{reclamo.codigo}</span>
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
@@ -179,10 +183,10 @@ export default function ReclamosPage() {
                   <td className="py-3.5 px-4 hidden lg:table-cell">
                     <span className="text-sm text-slate-400">{formatFecha(reclamo.fechaCreacion)}</span>
                   </td>
-                  <td className="py-3.5 px-4">
-                    <Link href={`/reclamos/${reclamo.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-white/5">
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                    </Link>
+                  <td className="py-3.5 px-4 text-right">
+                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-surface-800 border border-white/5 group-hover:bg-brand-500/10 group-hover:border-brand-500/30 transition-all">
+                      <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-brand-400 group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </td>
                 </tr>
               ))}

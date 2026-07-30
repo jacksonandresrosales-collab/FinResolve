@@ -12,6 +12,7 @@ import {
   XCircle,
   Loader2,
   ArrowRight,
+  ChevronRight,
   PieChart as PieIcon,
   BarChart3
 } from 'lucide-react';
@@ -239,11 +240,13 @@ export default function TableroPage() {
                     <td className="py-4 px-4 hidden sm:table-cell">
                       <span className="text-sm text-slate-400">{new Date(r.fechaReclamo).toLocaleDateString('es-EC')}</span>
                     </td>
-                    <td className="py-4 px-4 text-right">
-                      {/* Reuse normal badges if exact mapping exists, otherwise fallback to plain text */}
+                    <td className="py-4 px-4 text-right flex items-center justify-end gap-3">
                       <span className="inline-block px-2.5 py-1 text-xs font-medium bg-surface-800 text-slate-300 border border-white/10 rounded-lg">
                         {r.estadoReclamoDescripcion}
                       </span>
+                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-surface-800 border border-white/5 group-hover:bg-brand-500/10 group-hover:border-brand-500/30 transition-all">
+                        <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-brand-400 group-hover:translate-x-0.5 transition-all" />
+                      </div>
                     </td>
                   </tr>
                 ))
