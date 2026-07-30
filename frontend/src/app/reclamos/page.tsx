@@ -6,7 +6,7 @@ import { apiGet } from '@/lib/api';
 import { toReclamoUI, type ReclamoUIData } from '@/lib/apiTransform';
 import type { ReclamoResponse } from '@/types';
 import { PrioridadBadge, EstadoBadge, AlertaSLAIndicator } from '@/components/ui/Badges';
-import { FileText, Filter, ChevronRight, Search, Plus, Loader2 } from 'lucide-react';
+import { FileText, Filter, ChevronRight, ChevronDown, Search, Plus, Loader2 } from 'lucide-react';
 
 const ESTADOS = ['NUEVO', 'EN_ANALISIS', 'PENDIENTE_INFO', 'RESUELTO', 'CERRADO'] as const;
 const PRIORIDADES = ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'] as const;
@@ -99,26 +99,32 @@ export default function ReclamosPage() {
               className="w-full pl-9 pr-3 py-2 bg-surface-800 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all"
             />
           </div>
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="px-3 py-2 bg-surface-800 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all cursor-pointer"
-          >
-            <option value="TODOS">Todos los estados</option>
-            {ESTADOS.map((e) => (
-              <option key={e} value={e}>{e.replace(/_/g, ' ')}</option>
-            ))}
-          </select>
-          <select
-            value={filtroPrioridad}
-            onChange={(e) => setFiltroPrioridad(e.target.value)}
-            className="px-3 py-2 bg-surface-800 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all cursor-pointer"
-          >
-            <option value="TODOS">Todas las prioridades</option>
-            {PRIORIDADES.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+              className="pl-3 pr-10 py-2 bg-surface-800 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all cursor-pointer appearance-none"
+            >
+              <option value="TODOS">Todos los estados</option>
+              {ESTADOS.map((e) => (
+                <option key={e} value={e}>{e.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+          <div className="relative">
+            <select
+              value={filtroPrioridad}
+              onChange={(e) => setFiltroPrioridad(e.target.value)}
+              className="pl-3 pr-10 py-2 bg-surface-800 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all cursor-pointer appearance-none"
+            >
+              <option value="TODOS">Todas las prioridades</option>
+              {PRIORIDADES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
         </div>
       </div>
 
